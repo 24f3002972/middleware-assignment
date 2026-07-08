@@ -49,51 +49,36 @@ clients = {}
 
 @app.middleware("http")
 async def request_context_and_rate_limit(request: Request, call_next):
-
-    # -----------------------------
     # Request ID
-    # -----------------------------
-
     request_id = request.headers.get("X-Request-ID")
-
     if not request_id:
         request_id = str(uuid.uuid4())
 
     request.state.request_id = request_id
 
-    # -----------------------------
     # Rate limiting
-    # -----------------------------
-
     client = request.headers.get("X-Client-Id", "anonymous")
-
     now = time.time()
 
     if client not in clients:
         clients[client] = []
 
-    # Keep only requests within last 10 seconds
-    clients[client] = [
-        t for t in clients[client]
-        if now - t < WINDOW
-    ]
+    clients[client] = [t for t in clients[client] if now - t < WINDOW]
 
     if len(clients[client]) >= RATE_LIMIT:
-        return JSONResponse(
+        response = JSONResponse(
             status_code=429,
-            content={
-                "detail": "Rate limit exceeded"
-            }
+            content={"detail": "Rate limit exceeded"},
         )
+        # IMPORTANT: include the request ID even on errors
+        response.headers["X-Request-ID"] = request_id
+        return response
 
     clients[client].append(now)
 
-    # -----------------------------
-    # Continue
-    # -----------------------------
-
     response = await call_next(request)
 
+    # IMPORTANT: always set the response header
     response.headers["X-Request-ID"] = request_id
 
     return response
