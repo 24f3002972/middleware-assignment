@@ -17,7 +17,7 @@ ALLOWED_ORIGIN = "https://app-eek0ih.example.com"
 
 # Also allow the exam page origin.
 # Replace this with the origin shown in the assignment page if different.
-EXAM_ORIGIN = "https://exam.sanand.work"
+EXAM_ORIGIN = "https://exam.sanand.workers.dev/tds-2026-05-ga2"
 
 RATE_LIMIT = 12
 WINDOW = 10
